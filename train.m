@@ -14,7 +14,7 @@ training_faces_path = [data_directory, 'training_faces'];
 training_faces_list = dir(training_faces_path);
 
 % training nonfaces list
-trainig_nonfaces_path = [data_directory, 'training_nonfaces'];
+training_nonfaces_path = [data_directory, 'training_nonfaces'];
 training_nonfaces_list = dir(training_nonfaces_path);
 
 % get sizes of training lists
