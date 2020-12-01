@@ -69,10 +69,10 @@ load boosted15.mat;
 load classifiers1000.mat
 wc = weak_classifiers{182};
 
-response = eval_weak_classifier(wc, examples(:,:,1)) % -2779
-response2 = eval_weak_classifier(wc, examples(:,:,300)) % -2307
-response3 = eval_weak_classifier(wc, examples(:,:,3110)) % -3280
+response = eval_weak_classifier(wc, examples(:,:,1)); % -2779
+response2 = eval_weak_classifier(wc, examples(:,:,300)); % -2307
+response3 = eval_weak_classifier(wc, examples(:,:,3110);) % -3280
 
-response4 = eval_weak_classifier(wc, examples(:,:,3000)) %-2422
-response5 = eval_weak_classifier(wc, examples(:,:,10)) % 
-response6 = eval_weak_classifier(wc, examples(:,:,20)) % -3210
+response4 = eval_weak_classifier(wc, examples(:,:,3000)); %-2422
+response5 = eval_weak_classifier(wc, examples(:,:,10)); % 
+response6 = eval_weak_classifier(wc, examples(:,:,20)); % -3210
