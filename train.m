@@ -2,6 +2,10 @@
 % Components: AdaBoost, Skin detection, Bootstrapping, Cascades.
 
 % TRAINING script
+%addpath 'C:\Users\Xuan\Documents\Jenna\Texas State University\Semester\Fall 2020\CS 4379C - Computer Vision\Final Project\git\ComputerVison-project\files'
+%addpath 'C:\Users\Xuan\Documents\Jenna\Texas State University\Semester\Fall 2020\CS 4379C - Computer Vision\Final Project\git\ComputerVison-project\training_test_data'
+
+%cd 'C:\Users\Xuan\Documents\Jenna\Texas State University\Semester\Fall 2020\CS 4379C - Computer Vision\Final Project\git\ComputerVison-project'
 
 clear all;
 clc;
@@ -58,35 +62,51 @@ for example = 1:example_number
     end
 end
 
-%save responsesResults responses labels classifier_number example_number examples;
+%save reponsesResults responses labels classifier_number example_number examples;
 
 load reponsesResults.mat;
-
-%tic;
 %boosted_classifier = AdaBoost(responses, labels, 15);
-%toc;
-
 %save boosted15 boosted_classifier;
 load boosted15.mat;
 % Choose best classifier (highest threshold and high best error, alpha to classify images
 % Start training
 load classifiers1000.mat
-wc = weak_classifiers{182};
+wc = weak_classifiers{683};
 
-response = eval_weak_classifier(wc, examples(:,:,1)); % -2779
-response2 = eval_weak_classifier(wc, examples(:,:,300)); % -2307
-response3 = eval_weak_classifier(wc, examples(:,:,3110)); % -3280
+response = eval_weak_classifier(wc, examples(:,:,1))
+% Train on all training data - run 15 rounds of adaBoost
+misclassified = 0;
+tic
+for i = 1:15
+    order = boosted_classifier(i, 1);
+    best_classifier = weak_classifiers{order};
+    best_threshold = boosted_classifier(i, 3);
+    for a = 1:example_number
+        response = eval_weak_classifier(best_classifier, examples(:,:,a));
+        if a <= size(faces, 3)
+            if response <= best_threshold
+                misclassified = misclassified + 1;
+            end
+        end
+    end
+    classification_accuracy = ((example_number - misclassified)/example_number)*100
+    misclassified = 0;
+end
+toc
 
-response4 = eval_weak_classifier(wc, examples(:,:,3000)); %-2422
-response5 = eval_weak_classifier(wc, examples(:,:,10)); % 
-response6 = eval_weak_classifier(wc, examples(:,:,20)); % -3210
-
-%% 
-% Bootstrapping 
-
-clear;
-
-load reponsesResults;
-load boosted15;
-load classifiers1000;
-load training_data;
+%classification_accuracy = 80.0733
+%classification_accuracy = 78.6653
+%classification_accuracy = 91.5667
+%classification_accuracy = 97.7731
+%classification_accuracy = 81.3519
+%classification_accuracy = 99.5905
+%classification_accuracy = 84.1822
+%classification_accuracy = 99.8204
+%classification_accuracy = 82.3217
+%classification_accuracy = 82.7168
+%classification_accuracy = 98.3406
+%classification_accuracy = 99.0015
+%classification_accuracy = 78.3062
+%classification_accuracy = 93.7576
+%classification_accuracy = 99.8707
+%Elapsed time is 2.628481 seconds.
