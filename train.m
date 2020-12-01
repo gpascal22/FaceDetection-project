@@ -61,7 +61,11 @@ end
 %save reponsesResults responses labels classifier_number example_number examples;
 
 load reponsesResults.mat;
+
+%tic;
 %boosted_classifier = AdaBoost(responses, labels, 15);
+%toc;
+
 %save boosted15 boosted_classifier;
 load boosted15.mat;
 % Choose best classifier (highest threshold and high best error, alpha to classify images
