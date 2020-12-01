@@ -10,12 +10,12 @@ clc;
 directories;
 
 % training faces list
-training_faces_path = [data_directory, 'training_faces'];
+training_faces_path = [data_directory, '\', 'training_faces'];
 % training_faces_list = dir(training_faces_path);
 training_faces_list = dir('training_test_data\training_faces');
 
 % training nonfaces list
-training_nonfaces_path = [data_directory, 'training_nonfaces'];
+training_nonfaces_path = [data_directory, '\', 'training_nonfaces'];
 %training_nonfaces_list = dir(training_nonfaces_path);
 training_nonefaces_list = dir('training_test_data\training_nonfaces');
 
