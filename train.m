@@ -58,7 +58,7 @@ for example = 1:example_number
     end
 end
 
-%save reponsesResults responses labels classifier_number example_number examples;
+%save responsesResults responses labels classifier_number example_number examples;
 
 load reponsesResults.mat;
 
