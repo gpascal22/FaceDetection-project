@@ -52,22 +52,25 @@ end
 dirTrainingNonface = dir('training_test_data\training_nonfaces\*.jpg');
 % split non_face training images into 50x50 windows and store in non_faces
 % variable
-non_faces = zeros(50, 50, 130);
-a = 1; % top
-b = 50; % bottom
-c = 1; % left
-d = 50; % right
+non_faces1 = zeros(50, 50, 2000);
+count = 0;
+z = 1;
 for i = 1:length(dirTrainingNonface)
+    a = 1; % top
+    b = 50; % bottom
+    c = 1; % left
+    d = 50; % right
     filename = dirTrainingNonface(i).name;
     data1 = imread(fullfile('training_test_data\training_nonfaces', filename));    
     rows = size(data1, 1);
     cols = size(data1, 2);
     while b <= rows
         window = data1(a:b, c:d);
-        non_faces(:, :, i) = reshape(window, [50, 50, 1]);
+        non_faces1(:, :, z) = reshape(window, [50, 50, 1]);
         c = c + 50;
         d = d + 50;     
-        
+        count = count + 1;
+        z = z + 1;
         if d >= cols 
             d = 50;
             c = 1;
@@ -77,12 +80,15 @@ for i = 1:length(dirTrainingNonface)
     end
     
 end
-
+non_faces = zeros(50, 50, count);
+for i = 1:count
+    non_faces(:,:,i) = non_faces1(:,:,i);
+end
 % Compute face_integrals and non_faces_integrals
 for i = 1:3046
     faces_integrals(:,:,i) = integral_image(faces(:,:,i));  
 end
-for i = 1:130
+for i = 1:count
     non_faces_integrals(:,:,i) = integral_image(non_faces(:,:,i));  
 end
 
@@ -91,3 +97,4 @@ face_vertical = 50;
 face_horizontal = 50;
 % save variables in training_data.mat 
 save training_data.mat faces non_faces faces_integrals non_faces_integrals face_size face_horizontal face_vertical ;
+
