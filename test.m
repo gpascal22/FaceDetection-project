@@ -136,15 +136,15 @@ cascade_faces = [];
 cascade_nonfaces = [];
 
 
-for i = 1:classifier_number-1
+%for i = 1:classifier_number-1
     
-    result = cascade_classify(window);
+ %   result = cascade_classify(window);
     
-    if result == 1
-        cascade_faces = result;
-    elseif result == -1
-        cascade_nonfaces = result;
-    end
+ %   if result == 1
+ %       cascade_faces = result;
+ %   elseif result == -1
+ %      cascade_nonfaces = result;
+ %  end
     
 end
 
