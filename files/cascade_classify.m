@@ -5,7 +5,7 @@ threshold = 1;
 k = size(window);
 
 for i = 1: k
-    if window < thresohold
+    if window < threshold
         window = -1;
         result = window;
     elseif window > threshold
