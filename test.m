@@ -6,9 +6,6 @@
 clear;
 clc;
 
-addpath 'C:\Users\gauta\Desktop\ComputerVison-project-master\data\test_cropped_faces';
-addpath 'C:\Users\gauta\Desktop\ComputerVison-project-master\data\test_nonfaces';
-addpath 'C:\Users\gauta\Desktop\ComputerVison-project-master\data\test_face_photos';
 % set directories
 directories;
 
@@ -19,7 +16,7 @@ load boosted15;
 load training_data;
 
 threshold = 5;
-%%
+
 %Testing without classifier cascades and skin detection
 % 1. Testing cropped faces 
 
@@ -39,9 +36,9 @@ for i =1:num_test_croppedFaces
     cropped_pic = imcrop(cropped_pic, [center 59 59]);
    
     result = apply_classifier_aux(cropped_pic, boosted_classifier, weak_classifiers, [60 60]);
-    class = result(31,31);
+    class = result(31, 31); 
     
-    if class > threshold 
+    if class < threshold 
         predRight1 = predRight1 +1;
     else
         missclassified = missclassified +1;
@@ -51,8 +48,8 @@ end
 
 croppedFace_accuracy = (predRight1/num_test_croppedFaces) * 100;
 disp(croppedFace_accuracy);
-%%
-% 1. Testing non faces 
+
+1. Testing non faces 
 testing_nonfaces_path = [training_directory, '\', 'test_nonfaces'];
 testing_nonfaces_list = dir(testing_nonfaces_path);
 testing_nonfaces_list = remove_unwanted_dir(testing_nonfaces_list);
@@ -81,8 +78,7 @@ end
 nonFace_accuracy = (predRight2/num_testing_nonfaces) * 100;
 disp(nonFace_accuracy);
 
-%%
-% Testing photos
+Testing photos
 testing_faces_path = [training_directory,'\', 'test_face_photos'];
 testing_faces_list = dir(testing_faces_path);
 testing_faces_list = remove_unwanted_dir(testing_faces_list);
@@ -92,7 +88,7 @@ num_testing_faces = size(testing_faces_list, 1);
 
 predRight3 = 0;
 missclassified = 0;
-total = 0;
+
 
 for i =1:num_testing_faces
     
@@ -104,7 +100,7 @@ for i =1:num_testing_faces
                     
     class = max(max(result));
     
-    if class > threshold
+    if class < threshold
         predRight3 = predRight3 + 1;
     else
         missclassified = missclassified + 1;
@@ -112,13 +108,17 @@ for i =1:num_testing_faces
   
 end
 
-FaceAcc = (predRight3/num_testing_faces) * 100;
-disp(FaceAcc);
-%%
+FaceAcc1 = (predRight3/num_testing_faces) * 100;
+disp(FaceAcc1);
+
 %Testing with skin detection
 % read histogram
 negative_histogram = read_double_image('negatives.bin');
 positive_histogram = read_double_image('positives.bin');
+
+predRight4 = 0;
+missclassified = 0;
+
 
 for i =1:num_testing_faces
     first_image = testing_faces_list(i).name;
@@ -132,26 +132,18 @@ for i =1:num_testing_faces
         result = boosted_detector_demo(pass_image, 2,  boosted_classifier, ...
                           weak_classifiers, [60,60], 4);
         figure(i); imshow(result, []);
+        class = max(max(result));
+        
+        if class < threshold
+            predRight4 = predRight3 + 1;
+        else
+            missclassified = missclassified + 1;
+        end
     end
       
 end
-
-%%
-cascade_faces = [];
-cascade_nonfaces = [];
-
-
-%for i = 1:classifier_number-1
-    
- %   result = cascade_classify(window);
-    
- %   if result == 1
- %       cascade_faces = result;
- %   elseif result == -1
- %      cascade_nonfaces = result;
- %  end
-    
-%end
+FaceAcc2 = (predRight4/num_testing_faces) * 100;
+disp(FaceAcc2);
 
 
     
