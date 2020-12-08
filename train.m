@@ -1,162 +1,188 @@
 % Advanced face detection with AdaBoost
 % Components: AdaBoost, Skin detection, Bootstrapping, Cascades.
 
-% TESTING script
-
-clear;
+% TRAINING script
+clear ;
 clc;
 
 % set directories
 directories;
 
-% load data 
-load reponsesResults;
-load classifiers1000;
-load boosted15;
-load training_data;
+% training faces list
+training_faces_path = [data_directory, 'training_faces'];
+% training_faces_list = dir(training_faces_path);
+training_faces_list = dir('training_test_data\training_faces');
 
-threshold = 5;
+% training nonfaces list
+training_nonfaces_path = [data_directory, 'training_nonfaces'];
+%training_nonfaces_list = dir(training_nonfaces_path);
+training_nonefaces_list = dir('training_test_data\training_nonfaces');
 
-%Testing without classifier cascades and skin detection
-% 1. Testing cropped faces 
+% get sizes of training lists
+num_faces = size(training_faces_list, 1);
+num_non_faces = size(training_nonefaces_list, 1);
 
-testing_cropped_faces_path = [training_directory,'\', 'test_cropped_faces'];
-testing_cropped_faces_list = dir(testing_cropped_faces_path);
-testing_cropped_faces_list = remove_unwanted_dir(testing_cropped_faces_list);
+% First step using rectangle filters with adaboost on all the training images
+% Training using Rectangle filters and AdaBoost
+% Compute variables for training_data.mat for later use
 
-num_test_croppedFaces = size(testing_cropped_faces_list, 1);
-
-missclassified = 0;
-predRight1 = 0;
-
-for i =1:num_test_croppedFaces
-    cropped_face = testing_cropped_faces_list(i).name;
-    cropped_pic = double(imread(cropped_face));
-    center = (size(cropped_pic)/2)/2;
-    cropped_pic = imcrop(cropped_pic, [center 59 59]);
-   
-    result = apply_classifier_aux(cropped_pic, boosted_classifier, weak_classifiers, [60 60]);
-    class = result(31, 31); 
-    
-    if class < threshold 
-        predRight1 = predRight1 +1;
-    else
-        missclassified = missclassified +1;
-    end
-  
+% Choosing a set of random weak classifiers
+load training_data.mat
+number = 1000;
+weak_classifiers = cell(1, number);
+for i = 1:number
+    weak_classifiers{i} = generate_classifier(face_vertical, face_horizontal);
 end
 
-croppedFace_accuracy = (predRight1/num_test_croppedFaces) * 100;
-disp(croppedFace_accuracy);
+%save classifiers1000 weak_classifiers
 
-1. Testing non faces 
-testing_nonfaces_path = [training_directory, '\', 'test_nonfaces'];
-testing_nonfaces_list = dir(testing_nonfaces_path);
-testing_nonfaces_list = remove_unwanted_dir(testing_nonfaces_list);
-num_testing_nonfaces = size(testing_nonfaces_list, 1);
+% Precompute responses of all training examples on all weak classifiers
+example_number = size(faces, 3) + size(non_faces, 3);
+labels = zeros(example_number, 1);
+labels (1:size(faces, 3)) = 1;
+labels((size(faces, 3)+1):example_number) = -1;
+examples = zeros(face_vertical, face_horizontal, example_number);
+examples (:, :, 1:size(faces, 3)) = faces_integrals;
+examples(:, :, (size(faces, 3)+1):example_number) = non_faces_integrals;
 
-predRight2 = 0;
-missclassified = 0;
+classifier_number = numel(weak_classifiers);
 
-for i =1:num_testing_nonfaces
-  
-    non_face = testing_nonfaces_list(i).name;
-    non_facePic = double(imread(non_faces));
-    
-    result = apply_classifier_aux(non_facePic, boosted_classifier, weak_classifiers, [60 60]);
-    %result = boosted_multiscale_search(non_facePic, 3, boosted_classifier, weak_classifiers, [60,60]);
-    
-    class = max(max(result));                    
-                          
-    if class <= threshold
-        predRight2 = predRight2 +1;
-    else
-        missclassified = missclassified +1;
+responses =  zeros(classifier_number, example_number);
+
+for example = 1:example_number
+    integral = examples(:, :, example);
+    for feature = 1:classifier_number
+        classifier = weak_classifiers {feature};
+        responses(feature, example) = eval_weak_classifier(classifier, integral);
     end
-   
-end
-nonFace_accuracy = (predRight2/num_testing_nonfaces) * 100;
-disp(nonFace_accuracy);
-
-Testing photos
-testing_faces_path = [training_directory,'\', 'test_face_photos'];
-testing_faces_list = dir(testing_faces_path);
-testing_faces_list = remove_unwanted_dir(testing_faces_list);
-
-
-num_testing_faces = size(testing_faces_list, 1);
-
-predRight3 = 0;
-missclassified = 0;
-
-
-for i =1:num_testing_faces
-    
-    test_photo = testing_faces_list(i).name;
-    read_pic = read_gray(test_photo);
-    result = boosted_multiscale_search(read_pic, 2, ...
-                              boosted_classifier, weak_classifiers, ...
-                              [60,60]);
-                    
-    class = max(max(result));
-    
-    if class < threshold
-        predRight3 = predRight3 + 1;
-    else
-        missclassified = missclassified + 1;
-    end
-  
 end
 
-FaceAcc1 = (predRight3/num_testing_faces) * 100;
-disp(FaceAcc1);
+%save reponsesResults responses labels classifier_number example_number examples;
 
-%Testing with skin detection
-% read histogram
-negative_histogram = read_double_image('negatives.bin');
-positive_histogram = read_double_image('positives.bin');
+load reponsesResults.mat;
+%boosted_classifier = AdaBoost(responses, labels, 15);
+%save boosted15 boosted_classifier;
+load boosted15.mat;
+% Choose best classifier (highest threshold and high best error, alpha to classify images
+% Start training
+load classifiers1000.mat
+wc = weak_classifiers{683};
 
-predRight4 = 0;
-missclassified = 0;
-
-
-for i =1:num_testing_faces
-    first_image = testing_faces_list(i).name;
-    sec_image = double(imread(first_image));
-    pass_image = read_gray(first_image);
-    
-    if(size(sec_image, 3) == 3)
-        result_on_skin = detect_skin(sec_image, positive_histogram,  negative_histogram);
-        figure (i); imshow(result_on_skin, []);
-        
-        result = boosted_detector_demo(pass_image, 2,  boosted_classifier, ...
-                          weak_classifiers, [60,60], 4);
-        figure(i); imshow(result, []);
-        class = max(max(result));
-        
-        if class < threshold
-            predRight4 = predRight3 + 1;
-        else
-            missclassified = missclassified + 1;
+response = eval_weak_classifier(wc, examples(:,:,1));
+% Train on all training data - run 15 rounds of adaBoost
+misclassified = 0;
+tic
+for i = 1:15
+    order = boosted_classifier(i, 1);
+    best_classifier = weak_classifiers{order};
+    best_threshold = boosted_classifier(i, 3);
+    for a = 1:example_number
+        response = eval_weak_classifier(best_classifier, examples(:,:,a));
+        if a <= size(faces, 3)
+            if response <= best_threshold
+                misclassified = misclassified + 1;
+            end
         end
     end
-      
+    classification_accuracy = ((example_number - misclassified)/example_number)*100;
+    misclassified = 0;
 end
-FaceAcc2 = (predRight4/num_testing_faces) * 100;
-disp(FaceAcc2);
+toc
 
-cascade_faces = [];
-cascade_nonfaces = [];
+%classification_accuracy = 80.0733
+%classification_accuracy = 78.6653
+%classification_accuracy = 91.5667
+%classification_accuracy = 97.7731
+%classification_accuracy = 81.3519
+%classification_accuracy = 99.5905
+%classification_accuracy = 84.1822
+%classification_accuracy = 99.8204
+%classification_accuracy = 82.3217
+%classification_accuracy = 82.7168
+%classification_accuracy = 98.3406
+%classification_accuracy = 99.0015
+%classification_accuracy = 78.3062
+%classification_accuracy = 93.7576
+%classification_accuracy = 99.8707
+%Elapsed time is 2.628481 seconds.
 
+% BOOSTRAPING
+% Bootstrap set
+bootstrapDataSet = zeros(50, 50, 5437);
+% Add data to boostrap set
+% faces
+count = 0;
+for i = 1:1014
+    bootstrapDataSet(:,:,i) = examples(:,:,i);
+    count = count + 1;
+end
+% nonfaces
+v = 7250;
+for i = 1015:4639
+    bootstrapDataSet(:,:,i) = examples(:,:,v);
+    count = count + 1;
+    v = v + 1; 
+end
 
-for i = 1:classifier_number-1
-    
-   result = cascade_classify([60 60]);
-    
-   if result == 1
-       cascade_faces = result;
-   elseif result == -1
-      cascade_nonfaces = result;
-  end
+misI = 0;
+number = size(bootstrapDataSet, 3);
+misclassified2 = 0;
+misclassified3 = 0;
+max = 0;
+classification_accuracyBT = zeros(15, 1);
+count2 = 1;
+tic
+while count < 5437
+    % Train on boostrap set
+    for i = 1:15
+        order = boosted_classifier(i, 1);
+        best_classifier = weak_classifiers{order};
+        best_threshold = boosted_classifier(i, 3);
+        for a = 1:count
+            response = eval_weak_classifier(best_classifier, bootstrapDataSet(:,:,a));
+            if a <= 1014
+                if response <= best_threshold
+                    misclassified2 = misclassified2 + 1;
+                end
+            end
+        end
+        acc = ((number - misclassified2)/number)*100;
+        classification_accuracyBT(i, 1) = ((number - misclassified2)/number)*100;
+        %fprintf("Accuracy: %d", classification_accuracyBT);
+        misclassified2 = 0;
+        if i == 1
+            max = classification_accuracyBT(i, 1);
+        else
+            if max < classification_accuracyBT(i, 1)
+                max = classification_accuracyBT(i, 1);
+            end  
+        end
+        signal = 0;
+        % Train on whole data 
+        a = count2;
+        while a <= 7251 && signal ~= -1
+            response = eval_weak_classifier(best_classifier, examples(:,:,a));
+            if a <= size(faces, 3)
+                if response <= best_threshold 
+                    index = a;
+                    misclassified3 = misclassified3 + 1; 
+                    signal = -1;
+                                         
+                end
+               
+            end
+            count2 = count2 + 1;
+            a = a + 1;
+        end
+         
+        bootstrapDataSet(:,:,count+1) = examples(:,:,a);    
+        count = count + 1;
+        
+    end
     
 end
+toc
+%{ 
+
+Elapsed time is 36.741427 seconds.
+%}
